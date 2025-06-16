@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nigerian Text-to-Speech Studio</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary-color: #3b82f6;
+            --background-light: #f0f9ff;
+            --background-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --error-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --border-radius: 1rem;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--background-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+
+        .container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 800px;
+            padding: 2.5rem;
+            transform: translateY(0);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            margin-bottom: 2rem;
+        }
+
+        .textarea-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1.25rem;
+            border: 2px solid #e5e7eb;
+            border-radius: calc(var(--border-radius) - 0.25rem);
+            resize: vertical;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: -1.5rem;
+            right: 0;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .char-count.warning {
+            color: var(--warning-color);
+        }
+
+        .char-count.error {
+            color: var(--error-color);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        select {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: calc(var(--border-radius) - 0.25rem);
+            font-size: 1rem;
+            color: var(--text-dark);
+            background-color: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .generate-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: calc(var(--border-radius) - 0.25rem);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-section {
+            margin-top: 1.5rem;
+        }
+
+        #loading {
+            display: none;
+            color: var(--primary-color);
+            text-align: center;
+            padding: 1rem;
+            background-color: var(--background-light);
+            border-radius: var(--border-radius);
+            font-weight: 500;
+        }
+
+        #error {
+            display: none;
+            color: var(--error-color);
+            text-align: center;
+            padding: 1rem;
+            background-color: #fef2f2;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+
+        .audio-wrapper {
+            background-color: var(--background-light);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        audio {
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: calc(var(--border-radius) - 0.25rem);
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .generate-btn {
+                width: 100%;
+            }
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-microphone-alt logo-icon"></i>
+                Nigerian TTS Studio
+            </h1>
+            <p class="subtitle">Professional Text-to-Speech in Nigerian Voices</p>
+        </div>
+
+        <div class="input-section">
+            <div class="textarea-wrapper">
+                <textarea 
+                    id="text-input" 
+                    placeholder="Enter your text here... Write naturally, including punctuation for better speech quality."
+                    maxlength="1000"
+                ></textarea>
+                <div class="char-count" id="char-count">0/1000 characters</div>
+            </div>
+
+            <div class="controls">
+                <select id="voice-select">
+                    <option value="idera">Idera (Default - Female)</option>
+                    <option value="emma">Emma (Male)</option>
+                    <option value="jude">Jude (Male)</option>
+                    <option value="osagie">Osagie (Male)</option>
+                    <option value="tayo">Tayo (Male)</option>
+                    <option value="zainab">Zainab (Female)</option>
+                    <option value="joke">Joke (Female)</option>
+                    <option value="regina">Regina (Female)</option>
+                    <option value="remi">Remi (Female)</option>
+                    <option value="umar">Umar (Male)</option>
+                    <option value="chinenye">Chinenye (Female)</option>
+                </select>
+
+                <button id="generate-btn" class="generate-btn">
+                    <i class="fas fa-waveform"></i>
+                    <span>Generate Speech</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div id="loading">
+                <div class="loading-spinner"></div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill"></div>
+                </div>
+            </div>
+            <div id="error"></div>
+            <div id="audio-container"></div>
+        </div>
+    </div>
+
+   <script>
+    // Configuration
+const CONFIG = {
+    BACKEND_URL: window.location.hostname === 'localhost'
+        ? 'http://localhost:5000/generate'
+        : `http://${window.location.hostname}:5000/generate`,
+    TIMEOUT: 1200000, // 5 minutes
+    MAX_TEXT_LENGTH: 1000,
+    PROGRESS_MESSAGES: [
+        "Initializing text-to-speech...",
+        "Processing text...",
+        "Generating audio...",
+        "Almost there..."
+    ]
+};
+
+// DOM Elements
+const generateBtn = document.getElementById('generate-btn');
+const textInput = document.getElementById('text-input');
+const voiceSelect = document.getElementById('voice-select');
+const loading = document.getElementById('loading');
+const error = document.getElementById('error');
+const audioContainer = document.getElementById('audio-container');
+
+// Progress Message Control
+let progressInterval;
+let messageIndex = 0;
+
+function startProgressMessages() {
+    messageIndex = 0;
+    loading.textContent = CONFIG.PROGRESS_MESSAGES[0];
+    progressInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % CONFIG.PROGRESS_MESSAGES.length;
+        loading.textContent = CONFIG.PROGRESS_MESSAGES[messageIndex];
+    }, 3000);
+}
+
+function stopProgressMessages() {
+    clearInterval(progressInterval);
+}
+
+// UI Helper Functions
+function showError(message) {
+    error.textContent = message;
+    error.style.display = 'block';
+    error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    generateBtn.disabled = false;
+    loading.style.display = 'none';
+}
+
+function resetUI() {
+    error.style.display = 'none';
+    generateBtn.disabled = true;
+    loading.style.display = 'block';
+    audioContainer.innerHTML = '';
+}
+
+function resetButtonState() {
+    generateBtn.disabled = false;
+    loading.style.display = 'none';
+}
+
+function createCharCounter() {
+    const charCount = document.createElement('div');
+    charCount.id = 'char-count';
+    charCount.className = 'char-count';
+    textInput.parentNode.insertBefore(charCount, textInput.nextSibling);
+    return charCount;
+}
+
+// Audio Generation Functions
+async function createAudioElements(audioUrl, voiceType) {
+    const audioWrapper = document.createElement('div');
+    audioWrapper.className = 'audio-wrapper';
+
+    // Create audio element
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = audioUrl;
+    audio.className = 'w-full';
+    
+    // Add loading states
+    audio.addEventListener('loadstart', () => audio.style.opacity = '0.5');
+    audio.addEventListener('canplay', () => audio.style.opacity = '1');
+
+    // Create download button
+    const downloadBtn = document.createElement('a');
+    downloadBtn.href = audioUrl;
+    downloadBtn.download = `nigerian_tts_${voiceType}_${Date.now()}.wav`;
+    downloadBtn.className = 'download-btn';
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Audio';
+
+    // Create success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'success-message';
+    successMessage.textContent = 'Audio generated successfully!';
+
+    // Assemble components
+    audioWrapper.appendChild(successMessage);
+    audioWrapper.appendChild(audio);
+    audioWrapper.appendChild(downloadBtn);
+
+    return audioWrapper;
+}
+
+// Event Listeners
+generateBtn.addEventListener('click', async () => {
+    const text = textInput.value.trim();
+    
+    // Validation
+    if (!text) {
+        showError('Please enter some text');
+        return;
+    }
+
+    if (text.length > CONFIG.MAX_TEXT_LENGTH) {
+        showError(`Text too long. Maximum ${CONFIG.MAX_TEXT_LENGTH} characters allowed.`);
+        return;
+    }
+
+    // Start generation process
+    resetUI();
+    startProgressMessages();
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+        const response = await fetch(CONFIG.BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: text,
+                voice: voiceSelect.value
+            }),
+            signal: controller.signal,
+            mode: 'cors'
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.details || errorData?.error || 'Unknown error occurred');
+        }
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audioWrapper = await createAudioElements(audioUrl, voiceSelect.value);
+
+        // Update UI with smooth transition
+        audioContainer.style.opacity = '0';
+        setTimeout(() => {
+            audioContainer.innerHTML = '';
+            audioContainer.appendChild(audioWrapper);
+            audioContainer.style.opacity = '1';
+        }, 300);
+
+    } catch (err) {
+        console.error('Error details:', err);
+        
+        const errorMessage = err.name === 'AbortError'
+            ? 'Request timed out. The text might be too long to process.'
+            : err.name === 'TypeError'
+                ? 'Network error. Please check your connection and try again.'
+                : `Error: ${err.message}`;
+        
+        showError(errorMessage);
+    } finally {
+        stopProgressMessages();
+        resetButtonState();
+    }
+});
+
+textInput.addEventListener('input', () => {
+    const remaining = CONFIG.MAX_TEXT_LENGTH - textInput.value.length;
+    const charCount = document.getElementById('char-count') || createCharCounter();
+    
+    charCount.textContent = `${textInput.value.length}/${CONFIG.MAX_TEXT_LENGTH} characters`;
+    charCount.className = remaining < 0 ? 'char-count error' : 'char-count';
+    
+    if (remaining < 0) {
+        showError(`Text too long by ${Math.abs(remaining)} characters`);
+        generateBtn.disabled = true;
+    } else {
+        error.style.display = 'none';
+        generateBtn.disabled = false;
+    }
+});
+   </script>
+</body>
+</html>
